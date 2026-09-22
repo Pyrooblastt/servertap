@@ -611,7 +611,8 @@ public class ServerApi {
         AtomicLong time = new AtomicLong(Long.parseLong(timeRaw));
         if (time.get() < 0) time.set(0);
 
-        ctx.future(() -> runCommandAsync(command, time.get()).thenAccept(
+        ctx.future(() -> runCommandAsync(command, time.get())
+                .thenAccept(
                         ret -> {
                             String output = String.join("\n", ret);
                             if ("application/json".equalsIgnoreCase(ctx.contentType())) {
@@ -622,7 +623,16 @@ public class ServerApi {
                         }
                 )
                 .exceptionally(throwable -> {
-                    throw new RuntimeException(throwable);
+                    // A blocked command never reaches this point - CommandFilter rejections
+                    // complete the future normally (see ServerExecCommandSender.executeCommand).
+                    // This only handles genuine command-execution failures (e.g. a dispatch
+                    // timeout). Log the cause locally instead of rethrowing, which previously
+                    // caused Javalin to log a full "Uncaught exception" stack trace to console
+                    // for every such error.
+                    Throwable cause = throwable.getCause() != null ? throwable.getCause() : throwable;
+                    log.warning("[ServerTap] Error executing command via REST: " + cause.getMessage());
+                    ctx.status(500).result(Constants.COMMAND_GENERIC_ERROR);
+                    return null;
                 }));
     }
 

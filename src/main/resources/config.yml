@@ -42,3 +42,18 @@ blocked-paths:
 # - /v1/ping
 # - /v1/players/{uuid}
 # - /v1/server/*
+
+# Restrict which commands can be run through ServerTap's external command execution
+# routes (the /v1/server/exec REST endpoint and the console WebSocket). This has no
+# effect on commands run internally by other plugins, Skript, or the server itself.
+command-filter:
+  # false = preserve original ServerTap behavior (any command may be executed remotely)
+  # true  = only commands listed in allowed-commands below may be executed remotely
+  enabled: false
+
+  # Exact, case-insensitive command names (no leading slash, no arguments) that are
+  # allowed when command-filter.enabled is true. Anything not listed here is blocked,
+  # including an empty or missing list.
+  allowed-commands:
+    - mawar
+    - loveorn

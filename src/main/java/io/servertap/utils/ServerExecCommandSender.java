@@ -42,6 +42,16 @@ public class ServerExecCommandSender implements ConsoleCommandSender {
     }
 
     public CompletableFuture<List<String>> executeCommand(String command, long messagingTime, TimeUnit messagingUnit) {
+        // Enforce ServerTap's external command allowlist (if enabled) before this
+        // command ever reaches Bukkit.dispatchCommand. This only guards this
+        // external/REST execution route - it has no effect on internal command
+        // dispatch by Skript, other plugins, or the server itself.
+        if (!CommandFilter.isAllowed(main, command)) {
+            CompletableFuture<List<String>> blockedFuture = new CompletableFuture<>();
+            blockedFuture.complete(List.of(Constants.COMMAND_NOT_ALLOWED));
+            return blockedFuture;
+        }
+
         Future<Boolean> commandFuture = Bukkit.getScheduler().callSyncMethod(
                 main,
                 () -> Bukkit.dispatchCommand(this, command)

@@ -31,6 +31,7 @@ public class Constants {
     // Command Execution messages
     public static final String COMMAND_PAYLOAD_MISSING = "Missing Command";
     public static final String COMMAND_GENERIC_ERROR = "An error occurred while executing command";
+    public static final String COMMAND_NOT_ALLOWED = "Command is not allowed.";
 
     // General errors
     public static final String INVALID_UUID = "Invalid UUID";

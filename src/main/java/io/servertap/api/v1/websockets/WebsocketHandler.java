@@ -2,8 +2,10 @@ package io.servertap.api.v1.websockets;
 
 import io.javalin.websocket.WsConfig;
 import io.javalin.websocket.WsContext;
+import io.servertap.Constants;
 import io.servertap.ServerTapMain;
 import io.servertap.api.v1.models.ConsoleLine;
+import io.servertap.utils.CommandFilter;
 import io.servertap.utils.ConsoleListener;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -52,6 +54,21 @@ public class WebsocketHandler {
 
                 final String command = cmd;
                 if (main != null) {
+
+                    // Enforce ServerTap's external command allowlist (if enabled) before this
+                    // command ever reaches Bukkit.dispatchCommand. This only guards this
+                    // external/WebSocket execution route - it has no effect on internal
+                    // command dispatch by Skript, other plugins, or the server itself.
+                    if (!CommandFilter.isAllowed(main, command)) {
+                        ConsoleLine rejection = new ConsoleLine();
+                        rejection.setMessage(Constants.COMMAND_NOT_ALLOWED);
+                        rejection.setTimestampMillis(System.currentTimeMillis());
+                        rejection.setLoggerName("ServerTap");
+                        rejection.setLevel("WARNING");
+                        ctx.send(rejection);
+                        return;
+                    }
+
                     // Run the command on the main thread
                     Bukkit.getScheduler().scheduleSyncDelayedTask(main, () -> {
 
